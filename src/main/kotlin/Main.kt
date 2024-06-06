@@ -12,13 +12,15 @@ fun main() {
     val wordsFile = File("words.txt")
 
     for (string in wordsFile.readLines()) {
-        try {
-            val lineSplit = string.split(" | ")
-            dictionary.add(Word(enWord = lineSplit[0], ruWord = lineSplit[1], correctCount = lineSplit[2].toInt()))
-        } catch (e: Exception) {
-            println("Ошибка чтения строки: \"$string\", строка будет пропущена")
-            println(e)
-        }
+        val lineSplit = string.split("|")
+        if (lineSplit.size == 3)
+            dictionary.add(
+                Word(
+                    enWord = lineSplit[0].trim(),
+                    ruWord = lineSplit[1].trim(),
+                    correctCount = lineSplit[2].toIntOrNull() ?: 0
+                )
+            )
     }
     println(dictionary)
 }
