@@ -6,7 +6,7 @@ data class Word(
     val correctCount: Int,
 )
 
-fun getUserStatistics(dictionary: MutableList<Word>) {
+fun getUserStatistics(dictionary: List<Word>) {
     val wordCount = dictionary.size
     val learnedWords = dictionary.count { it.correctCount > 2 }
     if (wordCount > 0) {
@@ -17,7 +17,7 @@ fun getUserStatistics(dictionary: MutableList<Word>) {
     }
 }
 
-fun getDictionary(): MutableList<Word> {
+fun getDictionary(): List<Word> {
     val dictionary: MutableList<Word> = mutableListOf()
     val wordsFile = File("words.txt")
     for (string in wordsFile.readLines()) {
@@ -37,12 +37,13 @@ fun getDictionary(): MutableList<Word> {
 
 fun main() {
     val dictionary = getDictionary()
-
     while (true) {
-        println("Выберите пункт меню:")
-        println("1. Учить слова")
-        println("2. Статистика")
-        println("0. Выход")
+        println("""
+            Выберите пункт меню:
+            1. Учить слова
+            2. Статистика
+            0. Выход
+        """.trimIndent())
 
         val userInput = readlnOrNull()
 
