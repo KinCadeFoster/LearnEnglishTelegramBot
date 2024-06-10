@@ -8,8 +8,8 @@ data class Word(
 
 fun getUserStatistics(dictionary: List<Word>) {
     val wordCount = dictionary.size
-    val learnedWords = dictionary.count { it.correctCount > 2 }
     if (wordCount > 0) {
+        val learnedWords = dictionary.count { it.correctCount > 2 }
         val percentageLearned = ((learnedWords.toDouble() / wordCount) * 100).toInt()
         println("Выучено $learnedWords из $wordCount слов | $percentageLearned%")
     } else {
