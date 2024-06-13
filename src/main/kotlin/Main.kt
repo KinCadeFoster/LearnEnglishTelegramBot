@@ -3,7 +3,7 @@ import java.io.File
 data class Word(
     val enWord: String,
     val ruWord: String,
-    val correctCount: Int,
+    var correctCount: Int,
 )
 
 fun getUserStatistics(dictionary: List<Word>) {
@@ -34,21 +34,92 @@ fun getDictionary(): List<Word> {
     return dictionary
 }
 
+fun learnWords(dictionary: List<Word>) {
+    while (true) {
+        val unlearnedWords = getUnlearnedWords(dictionary)
+        if (unlearnedWords.isEmpty()) {
+            println("Вы выучили все слова!")
+            break
+        }
+        val learningWord = takeShuffleElements(unLearningWord = unlearnedWords)
+        println("Перевод слова <${learningWord[0].enWord.lowercase().replaceFirstChar { it.uppercase() }}>")
+
+        val answers = takeShuffleElements(dictionary, unlearnedWords, value = 3, learningWord)
+        answers.forEach { it ->
+            println(
+                "${answers.indexOf(it) + 1}. ${it.ruWord.lowercase().replaceFirstChar { it.uppercase() }}"
+            )
+        }
+        println("0. Выход")
+
+        print("Введите ваш ответ: ")
+        val userAnswer = readlnOrNull()?.toInt() ?: 404
+        if (userAnswer == 0) break
+        if (userAnswer !in 1..4) {
+            println("Вы ввели неверное значение введите ответ от 1 до 4")
+        } else {
+            if (answers[userAnswer - 1].ruWord == learningWord[0].ruWord)
+                updateCorrectCount(dictionary, learningWord)
+            else {
+                println(
+                    "Не верно, перевод слова <" +
+                            "${learningWord[0].enWord.lowercase().replaceFirstChar { it.uppercase() }}> " +
+                            "это <${learningWord[0].ruWord.lowercase().replaceFirstChar { it.uppercase() }}>")
+            }
+        }
+    }
+}
+
+
+fun takeShuffleElements(
+    dictionary: List<Word> = emptyList(),
+    unLearningWord: List<Word>,
+    value: Int = 0,
+    learningWord: List<Word> = emptyList(),
+): List<Word> {
+    return if (value == 0) {
+        unLearningWord.shuffled().take(1)
+    } else if (unLearningWord.size - 1 < value) {
+        val tempDictionary = dictionary.filter { word -> !learningWord.contains(word) }
+        val answers = tempDictionary.shuffled().take(value) + learningWord
+        answers.shuffled()
+    } else {
+        val tempUnlearningWord = unLearningWord.filter { word -> !learningWord.contains(word) }
+        val answers = tempUnlearningWord.shuffled().take(value) + learningWord
+        answers.shuffled()
+    }
+}
+
+fun getUnlearnedWords(dictionary: List<Word>): List<Word> {
+    return dictionary.filter { it.correctCount < 3 }
+}
+
+fun updateCorrectCount(dictionary: List<Word>, learningWord: List<Word>) {
+    dictionary.map {
+        if (it.enWord == learningWord[0].enWord) {
+            it.correctCount += 1
+        }
+    }
+}
+
 
 fun main() {
     val dictionary = getDictionary()
     while (true) {
-        println("""
+        println(
+            """
             Выберите пункт меню:
             1. Учить слова
             2. Статистика
             0. Выход
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         val userInput = readlnOrNull()
 
         when (userInput) {
             "1" -> {
+                learnWords(dictionary)
             }
 
             "2" -> {
