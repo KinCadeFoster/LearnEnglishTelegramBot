@@ -38,6 +38,15 @@ fun getDictionary(): List<Word> {
     return dictionary
 }
 
+fun updateWordsFile(dictionary: List<Word>) {
+    val file = File("words.txt")
+    file.printWriter().use { writer ->
+        dictionary.forEach { word ->
+            writer.println("${word.enWord}|${word.ruWord}|${word.correctCount}")
+        }
+    }
+}
+
 fun learnWords(dictionary: List<Word>) {
     while (true) {
         val unlearnedWords = getUnlearnedWords(dictionary)
@@ -62,9 +71,10 @@ fun learnWords(dictionary: List<Word>) {
         if (userAnswer !in 1..TOTAL_ANSWER_CHOICES) {
             println("Вы ввели неверное значение введите ответ от 1 до 4")
         } else {
-            if (answers[userAnswer - 1].ruWord == learningWord[0].ruWord)
-                dictionary.find { it.enWord == learningWord[0].enWord }?.let { it.correctCount++ }
-            else {
+            if (answers[userAnswer - 1].ruWord == learningWord[0].ruWord) {
+                updateCorrectCount(learningWord)
+                updateWordsFile(dictionary)
+            } else {
                 println(
                     "Не верно, перевод слова <" +
                             "${learningWord[0].enWord.lowercase().replaceFirstChar { it.uppercase() }}> " +
@@ -75,6 +85,9 @@ fun learnWords(dictionary: List<Word>) {
     }
 }
 
+fun updateCorrectCount(learningWord: List<Word>) {
+    learningWord[0].correctCount++
+}
 
 fun takeShuffleElements(
     dictionary: List<Word> = emptyList(),
