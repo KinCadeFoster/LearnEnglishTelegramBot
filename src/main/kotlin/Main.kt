@@ -38,6 +38,15 @@ fun getDictionary(): List<Word> {
     return dictionary
 }
 
+fun updateWordsFile(dictionary: List<Word>) {
+    val file = File("words.txt")
+    file.printWriter().use { writer ->
+        dictionary.forEach { word ->
+            writer.println("${word.enWord}|${word.ruWord}|${word.correctCount}")
+        }
+    }
+}
+
 fun learnWords(dictionary: List<Word>) {
     while (true) {
         val unlearnedWords = getUnlearnedWords(dictionary)
@@ -45,8 +54,8 @@ fun learnWords(dictionary: List<Word>) {
             println("Вы выучили все слова!")
             break
         }
-        val learningWord = takeShuffleElements(unLearningWord = unlearnedWords)
-        println("Перевод слова <${learningWord[0].enWord.lowercase().replaceFirstChar { it.uppercase() }}>")
+        val learningWord = takeLearningWord(unlearnedWords)
+        println("Перевод слова <${learningWord.enWord.lowercase().replaceFirstChar { it.uppercase() }}>")
 
         val answers = takeShuffleElements(dictionary, unlearnedWords, value = NEEDED_WRONG_ANSWERS, learningWord)
         answers.forEach { it ->
@@ -62,13 +71,14 @@ fun learnWords(dictionary: List<Word>) {
         if (userAnswer !in 1..TOTAL_ANSWER_CHOICES) {
             println("Вы ввели неверное значение введите ответ от 1 до 4")
         } else {
-            if (answers[userAnswer - 1].ruWord == learningWord[0].ruWord)
-                dictionary.find { it.enWord == learningWord[0].enWord }?.let { it.correctCount++ }
-            else {
+            if (answers[userAnswer - 1].ruWord == learningWord.ruWord) {
+                learningWord.correctCount++
+                updateWordsFile(dictionary)
+            } else {
                 println(
                     "Не верно, перевод слова <" +
-                            "${learningWord[0].enWord.lowercase().replaceFirstChar { it.uppercase() }}> " +
-                            "это <${learningWord[0].ruWord.lowercase().replaceFirstChar { it.uppercase() }}>"
+                            "${learningWord.enWord.lowercase().replaceFirstChar { it.uppercase() }}> " +
+                            "это <${learningWord.ruWord.lowercase().replaceFirstChar { it.uppercase() }}>"
                 )
             }
         }
@@ -76,23 +86,26 @@ fun learnWords(dictionary: List<Word>) {
 }
 
 
+
+fun takeLearningWord(unLearningWord: List<Word>): Word {
+    return unLearningWord.shuffled().take(1).first()
+}
+
 fun takeShuffleElements(
     dictionary: List<Word> = emptyList(),
     unLearningWord: List<Word>,
-    value: Int = 0,
-    learningWord: List<Word> = emptyList(),
+    value: Int,
+    learningWord: Word,
 ): List<Word> {
-    return if (value == 0) {
-        unLearningWord.shuffled().take(1)
-    } else if (unLearningWord.size - 1 < value) {
+    return if (unLearningWord.size - 1 < value) {
         getAnswerChoices(dictionary, learningWord, value)
     } else {
         getAnswerChoices(unLearningWord, learningWord, value)
     }
 }
 
-fun getAnswerChoices(dictionary: List<Word>, learningWord: List<Word>, value: Int): List<Word> {
-    val tempDictionary = dictionary.filter { word -> !learningWord.contains(word) }
+fun getAnswerChoices(dictionary: List<Word>, learningWord: Word, value: Int): List<Word> {
+    val tempDictionary = dictionary.filter { word -> word != learningWord }
     val answers = tempDictionary.shuffled().take(value) + learningWord
     return answers.shuffled()
 }
