@@ -1,8 +1,6 @@
 import java.io.File
 
-const val WORD_LEARNED_LIMIT = 3
 const val TOTAL_ANSWER_CHOICES = 4
-const val NEEDED_WRONG_ANSWERS = TOTAL_ANSWER_CHOICES - 1
 
 data class Word(
     val enWord: String,
@@ -21,13 +19,16 @@ data class Question(
     val correctAnswer: Word,
 )
 
-class LearnWordsTrainer {
+class LearnWordsTrainer(
+    private val wordLearnedLimit: Int = 3,
+    private val neededWrongAnswer: Int = TOTAL_ANSWER_CHOICES - 1,
+) {
     private var question: Question? = null
     private val dictionary = getDictionaryFromFile()
 
     fun getUserStatistics(): Statistics {
         val wordCount = dictionary.size
-        val learnedWords = dictionary.count { it.correctCount >= WORD_LEARNED_LIMIT }
+        val learnedWords = dictionary.count { it.correctCount >= wordLearnedLimit }
         val percentageLearned = ((learnedWords.toDouble() / wordCount) * 100).toInt()
         return Statistics(wordCount, learnedWords, percentageLearned)
     }
@@ -35,11 +36,11 @@ class LearnWordsTrainer {
     fun getNextQuestion(): Question? {
         val unlearnedWords = getUnlearnedWords(dictionary)
         if (unlearnedWords.isEmpty()) return null
-        val learningWord = takeLearningWord(unlearnedWords)
+        val learningWord = unlearnedWords.random()
         val questionWords = takeShuffleElements(
             dictionary,
             unlearnedWords,
-            value = NEEDED_WRONG_ANSWERS,
+            value = neededWrongAnswer,
             learningWord
         )
         question = Question(
@@ -54,7 +55,7 @@ class LearnWordsTrainer {
             val correctAnswerId = it.variants.indexOf(it.correctAnswer)
             if (correctAnswerId == userAnswer) {
                 it.correctAnswer.correctCount++
-                updateWordsFile(dictionary)
+                saveDictionary()
                 true
             } else {
                 false
@@ -63,11 +64,7 @@ class LearnWordsTrainer {
     }
 
     private fun getUnlearnedWords(dictionary: List<Word>): List<Word> {
-        return dictionary.filter { it.correctCount < WORD_LEARNED_LIMIT }
-    }
-
-    private fun takeLearningWord(unLearningWord: List<Word>): Word {
-        return unLearningWord.shuffled().take(1).first()
+        return dictionary.filter { it.correctCount < wordLearnedLimit }
     }
 
     private fun getAnswerChoices(dictionary: List<Word>, learningWord: Word, value: Int): List<Word> {
@@ -106,7 +103,7 @@ class LearnWordsTrainer {
         return dictionary
     }
 
-    private fun updateWordsFile(dictionary: List<Word>) {
+    private fun saveDictionary() {
         val file = File("words.txt")
         file.printWriter().use { writer ->
             dictionary.forEach { word ->
