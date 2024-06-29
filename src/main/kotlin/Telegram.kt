@@ -1,31 +1,31 @@
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-
 fun main(args: Array<String>) {
     val botToken = args[0]
     var updateId = 0
 
     while (true) {
+        val telegramBotService = TelegramBotService()
         Thread.sleep(2000)
-        val updates: String = getUpdates(botToken, updateId)
+        val updates: String = telegramBotService.getUpdates(botToken, updateId)
         println(updates)
 
-        val startUpdateId = updates.lastIndexOf("update_id")
-        val endUpdateId = updates.lastIndexOf(",\n\"message\"")
-        if (startUpdateId == -1 || endUpdateId == -1) continue
-        val updateIdString = updates.substring(startUpdateId + 11, endUpdateId)
-        updateId = updateIdString.toInt() + 1
+        val updateIdRegex: Regex = "\"update_id\":(\\d+)".toRegex()
+        updateId = updateIdRegex.findAll(updates)
+            .mapNotNull { it.groups[1]?.value?.toInt() }
+            .maxOrNull()?.plus(1) ?: 0
+
+        val textRegex = "\"text\":\"([^\"]+)\"".toRegex()
+        val matchResult: MatchResult? = textRegex.find(updates)
+        val groups = matchResult?.groups
+        val text = groups?.get(1)?.value?.lowercase()
+
+        if (text == "hello") {
+            val chatIdRegex = "\"chat\":\\s*\\{\\s*\"id\":\\s*(\\d+)".toRegex()
+            val matchResultChatId = chatIdRegex.find(updates)
+            val groupsId = matchResultChatId?.groups
+            val chatId = groupsId?.get(1)?.value?.toInt() ?: 0
+            if (chatId != 0) println(telegramBotService.sendMessage("Hello", chatId, botToken))
+        }
     }
 }
 
-fun getUpdates(botToken: String, updateId: Int): String {
-    val urlGetUpdates = "https://api.telegram.org/bot$botToken/getUpdates?offset=$updateId"
 
-    val client = HttpClient.newBuilder().build()
-    val request = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
-    val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-
-    return response.body()
-}
