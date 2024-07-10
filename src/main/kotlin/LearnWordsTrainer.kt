@@ -23,7 +23,7 @@ class LearnWordsTrainer(
     private val wordLearnedLimit: Int = 3,
     private val neededWrongAnswer: Int = TOTAL_ANSWER_CHOICES - 1,
 ) {
-    private var question: Question? = null
+    var question: Question? = null
     private val dictionary = getDictionaryFromFile()
 
     fun getUserStatistics(): Statistics {
@@ -112,5 +112,3 @@ class LearnWordsTrainer(
         }
     }
 }
-
-
