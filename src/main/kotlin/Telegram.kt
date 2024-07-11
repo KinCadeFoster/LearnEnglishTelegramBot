@@ -24,18 +24,15 @@ fun main(args: Array<String>) {
         val groups = matchResult?.groups
         val text = groups?.get(1)?.value?.lowercase()
 
-        val chatId = getChatId(updates)
+        val chatId = getChatId(updates) ?: continue
         val chatAnswer = getChatAnswer(updates)
         println(chatAnswer)
 
-
-        when (text) {
-            "/start" -> {
+        when {
+            text == "/start" -> {
                 if (chatId != 0) println(telegramBotService.sendMenu(chatId))
             }
-        }
 
-        when {
             chatAnswer == STATISTICS_CLICKED -> {
                 if (chatId != 0) println(telegramBotService.sendStatistics(chatId))
             }
@@ -66,10 +63,10 @@ fun main(args: Array<String>) {
 }
 
 
-fun getChatId(updates: String): Int {
+fun getChatId(updates: String): Int? {
     val matchResultChatId = chatIdRegex.find(updates)
     val groupsId = matchResultChatId?.groups
-    val chatId = groupsId?.get(1)?.value?.toInt() ?: 0
+    val chatId = groupsId?.get(1)?.value?.toInt()
     return chatId
 }
 
