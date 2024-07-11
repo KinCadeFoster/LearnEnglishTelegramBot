@@ -20,6 +20,7 @@ data class Question(
 )
 
 class LearnWordsTrainer(
+    private val fileName: String = "words.txt",
     private val wordLearnedLimit: Int = 3,
     private val neededWrongAnswer: Int = TOTAL_ANSWER_CHOICES - 1,
 ) {
@@ -28,8 +29,8 @@ class LearnWordsTrainer(
 
     fun getUserStatistics(): Statistics {
         val wordCount = dictionary.size
-        val learnedWords = dictionary.count { it.correctCount >= wordLearnedLimit }
-        val percentageLearned = ((learnedWords.toDouble() / wordCount) * 100).toInt()
+        val learnedWords = dictionary.filter { it.correctCount >= wordLearnedLimit }.size
+        val percentageLearned = learnedWords * 100 / wordCount
         return Statistics(wordCount, learnedWords, percentageLearned)
     }
 
@@ -88,7 +89,10 @@ class LearnWordsTrainer(
 
     private fun getDictionaryFromFile(): List<Word> {
         val dictionary: MutableList<Word> = mutableListOf()
-        val wordsFile = File("words.txt")
+        val wordsFile = File(fileName)
+        if (!wordsFile.exists()) {
+            File("words.txt").copyTo(wordsFile)
+        }
         for (string in wordsFile.readLines()) {
             val lineSplit = string.split("|")
             if (lineSplit.size == 3)
@@ -104,11 +108,16 @@ class LearnWordsTrainer(
     }
 
     private fun saveDictionary() {
-        val file = File("words.txt")
+        val file = File(fileName)
         file.printWriter().use { writer ->
             dictionary.forEach { word ->
                 writer.println("${word.enWord}|${word.ruWord}|${word.correctCount}")
             }
         }
+    }
+
+    fun resetProgress() {
+        dictionary.forEach { it.correctCount = 0 }
+        saveDictionary()
     }
 }
