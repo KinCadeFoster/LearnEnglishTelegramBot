@@ -87,16 +87,17 @@ fun handleUpdate(
     val trainer = trainers.getOrPut(chatId) { LearnWordsTrainer("$chatId.txt") }
 
     when {
-        text?.lowercase() == "/start" -> {
+        text?.lowercase() == START_CLICKED || chatAnswer == START_CLICKED  -> {
             telegramBotService.sendMenu(chatId, json)
         }
 
         chatAnswer == STATISTICS_CLICKED -> {
             val statistics = trainer.getUserStatistics()
             telegramBotService.sendMessage(
-                "\"Выучено ${statistics.learnedWords} из ${statistics.wordCount} слов. \n Это ${statistics.percentageLearned}% от всех слов в базе данных!\"",
+                "Выучено ${statistics.learnedWords} из ${statistics.wordCount} слов. \n Это ${statistics.percentageLearned}% от всех слов в базе данных!",
                 chatId, json
             )
+            telegramBotService.sendMenu(chatId, json)
         }
 
         chatAnswer == LEARN_WORDS_CLICKED -> {
@@ -106,6 +107,7 @@ fun handleUpdate(
         chatAnswer == RESET_CLICKED -> {
             trainer.resetProgress()
             telegramBotService.sendMessage("Прогресс изучения слов сброшен!", chatId, json)
+            telegramBotService.sendMenu(chatId, json)
         }
 
         chatAnswer?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true -> {

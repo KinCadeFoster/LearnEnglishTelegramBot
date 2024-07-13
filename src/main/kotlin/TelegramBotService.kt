@@ -12,6 +12,7 @@ const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
 const val STATISTICS_CLICKED = "statistics_clicked"
 const val LEARN_WORDS_CLICKED = "learn_words_clicked"
 const val RESET_CLICKED = "reset_clicked"
+const val START_CLICKED = "/start"
 
 @Serializable
 data class SendMessageRequest(
@@ -40,9 +41,10 @@ data class InLineKeyboard(
 class TelegramBotService(private val botToken: String) {
     private val client: HttpClient = HttpClient.newBuilder().build()
 
+
+
     fun getUpdates(updateId: Long): String {
         val urlGetUpdates = "$TELEGRAM_BOT_API_URL$botToken/getUpdates?offset=$updateId"
-
         val request = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
@@ -55,13 +57,11 @@ class TelegramBotService(private val botToken: String) {
             text = text,
         )
         val requestBodyString = json.encodeToString(requestBody)
-
         val client: HttpClient = HttpClient.newBuilder().build()
         val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(sendMessage))
             .header("Content-type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
-
         val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
     }
@@ -84,12 +84,10 @@ class TelegramBotService(private val botToken: String) {
             )
         )
         val requestBodyString = json.encodeToString(requestBody)
-
         val request = HttpRequest.newBuilder().uri(URI.create(urlSendMessage))
             .header("Content-type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
-
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
     }
@@ -100,21 +98,13 @@ class TelegramBotService(private val botToken: String) {
         } else {
             val urlSendMessage = "$TELEGRAM_BOT_API_URL$botToken/sendMessage"
 
-
             val requestBody = SendMessageRequest(
                 chatId = chatId,
-                text = question.correctAnswer.enWord.lowercase().replaceFirstChar { it.uppercase() },
+                text = "Перевод слова: ${question.correctAnswer.enWord.lowercase().replaceFirstChar { it.uppercase() }}",
                 replyMarkup = ReplyMarkup(
-                    listOf(question.variants.mapIndexed { index, word ->
-                        InLineKeyboard(
-                            text = word.ruWord.lowercase().replaceFirstChar { it.uppercase() },
-                            callbackData = "$CALLBACK_DATA_ANSWER_PREFIX$index"
-                        )
-                    }
-                    )
+                    inlineKeyboard = createInlineKeyboard(question.variants)
                 )
             )
-
             val requestBodyString = json.encodeToString(requestBody)
 
             val request = HttpRequest.newBuilder().uri(URI.create(urlSendMessage))
@@ -125,5 +115,33 @@ class TelegramBotService(private val botToken: String) {
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
             return response.body()
         }
+    }
+
+    private fun createInlineKeyboard(variants: List<Word>): List<List<InLineKeyboard>> {
+        val inlineKeyboard = mutableListOf<List<InLineKeyboard>>()
+        val row = mutableListOf<InLineKeyboard>()
+        variants.forEachIndexed { index, variant ->
+            row.add(
+                InLineKeyboard(
+                    text = variant.ruWord.lowercase().replaceFirstChar { it.uppercase() },
+                    callbackData = "$CALLBACK_DATA_ANSWER_PREFIX$index"
+                )
+            )
+            if (row.size == 2) {
+                inlineKeyboard.add(row.toList())
+                row.clear()
+            }
+        }
+        if (row.isNotEmpty()) {
+            inlineKeyboard.add(row)
+        }
+
+        inlineKeyboard.add(
+            listOf(
+                InLineKeyboard(text = "Вернуться в главное меню", callbackData = START_CLICKED)
+            )
+        )
+
+        return inlineKeyboard
     }
 }
