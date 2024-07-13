@@ -1,6 +1,5 @@
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 
 @Serializable
 data class Update(
@@ -45,9 +44,7 @@ fun main(args: Array<String>) {
     val botToken = args[0]
     var lastUpdateId = 0L
 
-    val json = Json {
-        ignoreUnknownKeys = true
-    }
+
     val trainers = HashMap<Long, LearnWordsTrainer>()
 
     while (true) {
@@ -56,10 +53,10 @@ fun main(args: Array<String>) {
         val responseString: String = telegramBotService.getUpdates(lastUpdateId)
         println("это updates: $responseString")
 
-        val response: Response = json.decodeFromString(responseString)
+        val response: Response = telegramBotService.json.decodeFromString(responseString)
         if (response.result.isEmpty()) continue
         val sortedUpdate = response.result.sortedBy { it.updateId }
-        sortedUpdate.forEach { handleUpdate(it, json, trainers, telegramBotService) }
+        sortedUpdate.forEach { handleUpdate(it, trainers, telegramBotService) }
         lastUpdateId = sortedUpdate.last().updateId + 1
     }
 }
@@ -68,15 +65,13 @@ fun checkNextQuestionAndSend(
     trainer: LearnWordsTrainer,
     chatId: Long,
     telegramBotService: TelegramBotService,
-    json: Json
 ) {
     val question = trainer.getNextQuestion()
-    telegramBotService.sendQuestion(chatId, question, json)
+    telegramBotService.sendQuestion(chatId, question)
 }
 
 fun handleUpdate(
     update: Update,
-    json: Json,
     trainers: HashMap<Long, LearnWordsTrainer>,
     telegramBotService: TelegramBotService
 ) {
@@ -87,40 +82,40 @@ fun handleUpdate(
     val trainer = trainers.getOrPut(chatId) { LearnWordsTrainer("$chatId.txt") }
 
     when {
-        text?.lowercase() == START_CLICKED || chatAnswer == START_CLICKED  -> {
-            telegramBotService.sendMenu(chatId, json)
+        text?.lowercase() == START_CLICKED || chatAnswer == START_CLICKED -> {
+            telegramBotService.sendMenu(chatId)
         }
 
         chatAnswer == STATISTICS_CLICKED -> {
             val statistics = trainer.getUserStatistics()
             telegramBotService.sendMessage(
                 "Выучено ${statistics.learnedWords} из ${statistics.wordCount} слов. \n Это ${statistics.percentageLearned}% от всех слов в базе данных!",
-                chatId, json
+                chatId
             )
-            telegramBotService.sendMenu(chatId, json)
+            telegramBotService.sendMenu(chatId)
         }
 
         chatAnswer == LEARN_WORDS_CLICKED -> {
-            checkNextQuestionAndSend(trainer, chatId, telegramBotService, json)
+            checkNextQuestionAndSend(trainer, chatId, telegramBotService)
         }
 
         chatAnswer == RESET_CLICKED -> {
             trainer.resetProgress()
-            telegramBotService.sendMessage("Прогресс изучения слов сброшен!", chatId, json)
-            telegramBotService.sendMenu(chatId, json)
+            telegramBotService.sendMessage("Прогресс изучения слов сброшен!", chatId)
+            telegramBotService.sendMenu(chatId)
         }
 
         chatAnswer?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true -> {
             val userAnswer = chatAnswer.substringAfter(CALLBACK_DATA_ANSWER_PREFIX).toInt()
             if (trainer.checkAnswer(userAnswer)) {
-                telegramBotService.sendMessage("Верно!", chatId, json)
+                telegramBotService.sendMessage("Верно!", chatId)
             } else {
                 telegramBotService.sendMessage(
                     "Не правильно: ${trainer.question?.correctAnswer?.enWord} - " +
-                            "${trainer.question?.correctAnswer?.ruWord}", chatId, json
+                            "${trainer.question?.correctAnswer?.ruWord}", chatId
                 )
             }
-            checkNextQuestionAndSend(trainer, chatId, telegramBotService, json)
+            checkNextQuestionAndSend(trainer, chatId, telegramBotService)
         }
     }
 }

@@ -41,6 +41,9 @@ data class InLineKeyboard(
 class TelegramBotService(private val botToken: String) {
     private val client: HttpClient = HttpClient.newBuilder().build()
 
+    val json = Json {
+        ignoreUnknownKeys = true
+    }
 
 
     fun getUpdates(updateId: Long): String {
@@ -50,7 +53,7 @@ class TelegramBotService(private val botToken: String) {
         return response.body()
     }
 
-    fun sendMessage(text: String, chatId: Long, json: Json): String {
+    fun sendMessage(text: String, chatId: Long): String {
         val sendMessage = "$TELEGRAM_BOT_API_URL$botToken/sendMessage"
         val requestBody = SendMessageRequest(
             chatId = chatId,
@@ -66,7 +69,7 @@ class TelegramBotService(private val botToken: String) {
         return response.body()
     }
 
-    fun sendMenu(chatId: Long, json: Json): String {
+    fun sendMenu(chatId: Long): String {
         val urlSendMessage = "$TELEGRAM_BOT_API_URL$botToken/sendMessage"
         val requestBody = SendMessageRequest(
             chatId = chatId,
@@ -92,15 +95,17 @@ class TelegramBotService(private val botToken: String) {
         return response.body()
     }
 
-    fun sendQuestion(chatId: Long, question: Question?, json: Json): String {
+    fun sendQuestion(chatId: Long, question: Question?): String {
         if (question == null) {
-            return sendMessage("Вы выучили все слова!", chatId, json)
+            return sendMessage("Вы выучили все слова!", chatId)
         } else {
             val urlSendMessage = "$TELEGRAM_BOT_API_URL$botToken/sendMessage"
 
             val requestBody = SendMessageRequest(
                 chatId = chatId,
-                text = "Перевод слова: ${question.correctAnswer.enWord.lowercase().replaceFirstChar { it.uppercase() }}",
+                text = "Перевод слова: ${
+                    question.correctAnswer.enWord.lowercase().replaceFirstChar { it.uppercase() }
+                }",
                 replyMarkup = ReplyMarkup(
                     inlineKeyboard = createInlineKeyboard(question.variants)
                 )
