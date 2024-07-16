@@ -49,8 +49,13 @@ class TelegramBotService(private val botToken: String) {
     fun getUpdates(updateId: Long): String {
         val urlGetUpdates = "$TELEGRAM_BOT_API_URL$botToken/getUpdates?offset=$updateId"
         val request = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
-        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-        return response.body()
+
+        return runCatching {
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            response.body()
+        }.getOrElse { error ->
+            "${error.message}"
+        }
     }
 
     fun sendMessage(text: String, chatId: Long): String {
@@ -65,8 +70,13 @@ class TelegramBotService(private val botToken: String) {
             .header("Content-type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
-        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
-        return response.body()
+
+        return runCatching {
+            val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
+            response.body()
+        }.getOrElse { error ->
+            "${error.message}"
+        }
     }
 
     fun sendMenu(chatId: Long): String {
@@ -91,8 +101,13 @@ class TelegramBotService(private val botToken: String) {
             .header("Content-type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
-        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-        return response.body()
+
+        return runCatching {
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            response.body()
+        }.getOrElse { error ->
+            "${error.message}"
+        }
     }
 
     fun sendQuestion(chatId: Long, question: Question?): String {
@@ -117,8 +132,12 @@ class TelegramBotService(private val botToken: String) {
                 .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
                 .build()
 
-            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-            return response.body()
+            return runCatching {
+                val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+                response.body()
+            }.getOrElse { error ->
+                "${error.message}"
+            }
         }
     }
 
